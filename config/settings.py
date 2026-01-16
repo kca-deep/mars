@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     # 공공데이터포털 API (산악기상정보, 위험지역 POI 공용) - URL 디코딩된 키
     PUBLIC_DATA_API_KEY: str = "o0Z61WpQ8qc3mszVvN+VG4ijRUBzNkK/y1AabKm6jM/NubQqwgisJnQANrPBQ8hvm3+BjiM84GyYVlKCAN9sqw=="
 
+    # SGIS 지오코딩 API
+    SGIS_CONSUMER_KEY: str = "4c2bd9960b8244fe885b"  # 서비스 ID
+    SGIS_CONSUMER_SECRET: str = "4ef7f08f127e4dfcb7f6"  # 보안키
+
     # 산악기상정보 API
     MOUNTAIN_WEATHER_BASE_URL: str = "https://apis.data.go.kr/1400377/mtweather/mountListSearch"
 
