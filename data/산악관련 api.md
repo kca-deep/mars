@@ -17,3 +17,8 @@
 ### 한국등산트레킹지원센터_전국주요봉우리 위험지역 POI 정보 서비스
 1. endpoint : https://apis.data.go.kr/B553662/dangerInfoService
 2. reference doc : data/gateway_swagger_guide.pdf
+
+
+### SGIS 인증
+1. 보안키 : 4ef7f08f127e4dfcb7f6
+2. 서비스id : 4c2bd9960b8244fe885b
