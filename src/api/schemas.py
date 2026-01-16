@@ -36,17 +36,18 @@ class BaseStation(BaseModel):
     """이동통신 기지국 정보"""
     lat: Optional[float] = Field(None, alias="LAT", description="위도")
     lon: Optional[float] = Field(None, alias="LON", description="경도")
-    frequency: Optional[int] = Field(None, alias="FRQ", description="주파수 (MHz)")
+    frequency: Optional[float] = Field(None, alias="FRQ", description="주파수 (MHz)")
     power: Optional[float] = Field(None, alias="PWR", description="출력 (W)")
     antenna_form: Optional[str] = Field(None, alias="ANT_FORM", description="안테나 형태")
     antenna_gain: Optional[float] = Field(None, alias="ANT_GAIN", description="안테나 이득 (dBi)")
     sea_altitude: Optional[float] = Field(None, alias="SEA_ALT", description="해발고 (m)")
     ground_altitude: Optional[float] = Field(None, alias="GRD_ALT", description="지상고 (m)")
-    carrier: Optional[str] = Field(None, alias="CUS_CD", description="통신사")
-    park_name: Optional[str] = Field(None, alias="PARK_NM", description="공원명")
+    service_name: Optional[str] = Field(None, alias="SERVICE_NAME", description="서비스명")
+    address: Optional[str] = Field(None, alias="ADDRESS", description="주소")
 
     class Config:
         populate_by_name = True
+        extra = "ignore"
 
 
 class BaseStationRequest(BaseModel):

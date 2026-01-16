@@ -45,38 +45,70 @@ class SpectrumMapClient(BaseAPIClient):
 
     async def fetch_data(
         self,
-        park_name: str = "ALL",
+        park_name: str = "지리산",
         park_type: int = 1,  # 1=국립, 2=도립, 3=군립
-        carrier: str = "ALL",
-        service: str = "ALL",
         max_pages: int = 5
     ) -> List[Dict[str, Any]]:
-        """산악지역 이동통신 기지국 정보 조회"""
+        """산악지역 이동통신 기지국 정보 조회
+
+        응답 필드:
+        - LAT, LON: 위경도
+        - FRQ_HZ: 주파수 (Hz)
+        - ARW_PWR_WTT: 출력 (W)
+        - ARW_FORM_CD: 안테나 형태
+        - ARW_GAN_NMV: 안테나 이득
+        - ALT_ALTD_HET: 해발고 (m)
+        - GND_ALTD_HET: 지상고 (m)
+        - SERVICE_NAME: 서비스명
+        """
         all_data = []
         page = 1
 
         while page <= max_pages:
+            # 필수 파라미터만 사용 (불필요한 파라미터 제거)
             params = {
                 "key": self.api_key,
                 "searchId": "07",
-                "type": "json",
                 "SCH_CD": "MOBILE",
                 "PARK_CD": park_type,
                 "QUERY": park_name,
-                "CUS_CD": carrier,
-                "SERVICE_CD": service,
-                "pIndex": page,
-                "pSize": 100
             }
 
             try:
                 result = await self._request(self.base_url, params)
-                data = result.get("data", [])
-                if not data:
+
+                # 응답 키는 "RESULT" (기존 "data" 아님)
+                data = result.get("RESULT", [])
+                result_code = result.get("RESULT_CODE", "")
+
+                if not data or result_code != "INFO-100":
+                    logger.warning(f"전파누리 API - RESULT_CODE: {result_code}")
                     break
-                all_data.extend(data)
+
+                # 필드명 정규화 (기존 스키마와 호환)
+                normalized_data = []
+                for item in data:
+                    normalized_data.append({
+                        "LAT": item.get("LAT"),
+                        "LON": item.get("LON"),
+                        "FRQ": item.get("FRQ_HZ", 0) / 1000000 if item.get("FRQ_HZ") else None,  # Hz → MHz
+                        "PWR": item.get("ARW_PWR_WTT"),
+                        "ANT_FORM": item.get("ARW_FORM_CD"),
+                        "ANT_GAIN": item.get("ARW_GAN_NMV"),
+                        "SEA_ALT": item.get("ALT_ALTD_HET"),
+                        "GRD_ALT": item.get("GND_ALTD_HET"),
+                        "SERVICE_NAME": item.get("SERVICE_NAME"),
+                        "ADDRESS": item.get("RDS_TRS_ADR"),
+                        # 원본 데이터도 포함
+                        "_raw": item
+                    })
+
+                all_data.extend(normalized_data)
                 logger.info(f"전파누리 API - Page {page}: {len(data)} records fetched")
-                page += 1
+
+                # 전파누리 API는 페이지네이션 없이 전체 반환
+                break
+
             except Exception as e:
                 logger.error(f"전파누리 API 오류: {e}")
                 break
