@@ -95,22 +95,26 @@ class MountainWeatherResponse(APIResponse):
 # ===== 위험지역 POI API =====
 class DangerInfo(BaseModel):
     """위험지역 POI 정보"""
-    danger_id: Optional[str] = Field(None, description="위험지역 ID")
-    danger_type: Optional[str] = Field(None, description="위험 유형")
-    location_name: Optional[str] = Field(None, description="위치명")
-    lat: Optional[float] = Field(None, description="위도")
-    lon: Optional[float] = Field(None, description="경도")
-    description: Optional[str] = Field(None, description="설명")
-    mountain_name: Optional[str] = Field(None, description="산 이름")
+    poi_id: Optional[str] = Field(None, alias="poiId", description="POI ID")
+    trail_id: Optional[str] = Field(None, alias="frtrlId", description="등산로 ID")
+    trail_name: Optional[str] = Field(None, alias="frtrlNm", description="등산로명")
+    lat: Optional[float] = Field(None, alias="lat", description="위도")
+    lon: Optional[float] = Field(None, alias="lot", description="경도")
+    altitude: Optional[float] = Field(None, alias="aslAltide", description="해발고도 (m)")
+    place_type: Optional[str] = Field(None, alias="plcTypeCd", description="장소 유형 코드")
+    place_name: Optional[str] = Field(None, alias="plcNm", description="장소명")
+    description: Optional[str] = Field(None, alias="explnCn", description="설명")
+    created_at: Optional[str] = Field(None, alias="crtrDt", description="생성일시")
 
     class Config:
         populate_by_name = True
+        extra = "ignore"
 
 
 class DangerInfoRequest(BaseModel):
     """위험지역 조회 요청"""
-    mountain_name: Optional[str] = Field(None, description="산 이름")
-    danger_type: Optional[str] = Field(None, description="위험 유형")
+    trail_id: Optional[str] = Field(None, description="등산로 ID")
+    place_type: Optional[str] = Field(None, description="장소 유형 코드")
 
 
 class DangerInfoResponse(APIResponse):

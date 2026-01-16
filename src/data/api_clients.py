@@ -5,6 +5,7 @@
 - 위험지역 POI API
 """
 import httpx
+import xmltodict
 from typing import Optional, List, Dict, Any
 from abc import ABC, abstractmethod
 import asyncio
@@ -193,6 +194,36 @@ class DangerInfoClient(BaseAPIClient):
         self.service_key = service_key
         self.base_url = base_url
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def _request_with_xml_fallback(self, url: str, params: dict) -> dict:
+        """XML/JSON 자동 변환 요청 (공공데이터 API용)"""
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            logger.info(f"Requesting: {url}")
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+
+            content_type = response.headers.get("content-type", "")
+            text = response.text
+
+            # JSON 파싱 시도
+            try:
+                return response.json()
+            except Exception:
+                pass
+
+            # XML 파싱 시도
+            if text.strip().startswith("<?xml") or text.strip().startswith("<"):
+                try:
+                    result = xmltodict.parse(text)
+                    logger.info("XML 응답을 JSON으로 변환 완료")
+                    return result
+                except Exception as e:
+                    logger.error(f"XML 파싱 실패: {e}")
+
+            # 에러 메시지 반환
+            logger.warning(f"응답 파싱 실패 - Content-Type: {content_type}, 내용: {text[:200]}")
+            return {"error": text}
+
     async def fetch_data(
         self,
         endpoint: str = "getDangerInfoList",
@@ -217,11 +248,24 @@ class DangerInfoClient(BaseAPIClient):
             url = f"{self.base_url}/{endpoint}"
 
             try:
-                result = await self._request(url, params)
+                result = await self._request_with_xml_fallback(url, params)
+
+                # 에러 응답 확인
+                if "error" in result:
+                    logger.warning(f"위험지역 API 에러 응답: {result.get('error', '')[:100]}")
+                    break
+
                 body = result.get("response", {}).get("body", {})
                 items = body.get("items", {}).get("item", [])
 
+                # items가 None이거나 빈 문자열인 경우
                 if not items:
+                    # 에러 코드 확인
+                    header = result.get("response", {}).get("header", {})
+                    result_code = header.get("resultCode", "")
+                    result_msg = header.get("resultMsg", "")
+                    if result_code != "00":
+                        logger.warning(f"위험지역 API - 코드: {result_code}, 메시지: {result_msg}")
                     break
 
                 if isinstance(items, dict):
